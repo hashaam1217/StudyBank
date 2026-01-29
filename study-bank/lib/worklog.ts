@@ -1,24 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import type { Worklog, WorklogEntry } from './types';
+import { REDEMPTION_MULTIPLIER } from './types';
 
-export interface WorklogEntry {
-  action: 'log_hours' | 'bank_hours' | 'redeem_hours';
-  timestamp: string;
-  details: {
-    hours: number;
-    description?: string;
-  };
-}
-
-export interface Worklog {
-  userId: string;
-  activities: WorklogEntry[];
-  totalHoursLogged: number;
-  totalHoursBanked: number;
-  totalHoursRedeemed: number;
-  unbankedHours: number; // Logged hours that haven't been banked yet
-  lastActive: string;
-}
+export { REDEMPTION_MULTIPLIER } from './types';
+export type { Worklog, WorklogEntry } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const WORKLOG_FILE = path.join(DATA_DIR, 'worklog.json');
@@ -56,7 +42,16 @@ export function readWorklog(): Worklog {
   }
   
   const data = fs.readFileSync(WORKLOG_FILE, 'utf-8');
-  return JSON.parse(data);
+  const worklog = JSON.parse(data) as Worklog;
+  
+  // Migration: Add unbankedHours if it doesn't exist
+  if (worklog.unbankedHours === undefined) {
+    // Calculate unbanked hours as total logged minus total banked
+    worklog.unbankedHours = Math.max(0, worklog.totalHoursLogged - worklog.totalHoursBanked);
+    writeWorklog(worklog);
+  }
+  
+  return worklog;
 }
 
 export function writeWorklog(worklog: Worklog): void {
@@ -117,4 +112,21 @@ export function bankAllHours(): Worklog {
   }
   
   return worklog;
+}
+
+export function calculateDailyAverage(worklog: Worklog): number {
+  const loggedActivities = worklog.activities.filter(a => a.action === 'log_hours');
+  
+  if (loggedActivities.length === 0) return 0;
+  
+  // Get the earliest activity date
+  const timestamps = loggedActivities.map(a => new Date(a.timestamp).getTime());
+  const earliestDate = new Date(Math.min(...timestamps));
+  const now = new Date();
+  
+  // Calculate days since first activity
+  const daysSinceStart = Math.max(1, Math.ceil((now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)));
+  
+  // Return average hours per day
+  return worklog.totalHoursLogged / daysSinceStart;
 }

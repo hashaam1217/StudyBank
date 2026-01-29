@@ -1,9 +1,58 @@
 {
   "userId": "user_1769551099190",
-  "activities": [],
-  "totalHoursLogged": 0,
-  "totalHoursBanked": 0,
+  "activities": [
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-28T03:05:11.694Z",
+      "details": {
+        "hours": 0.59,
+        "description": "ELEC 315 Lecture Slides + Assignment 1"
+      }
+    },
+    {
+      "action": "bank_hours",
+      "timestamp": "2026-01-28T03:05:27.145Z",
+      "details": {
+        "hours": 0.59,
+        "description": "Banked all available hours"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-28T23:48:50.500Z",
+      "details": {
+        "hours": 0.17,
+        "description": "ELEC 315 Assignment 1 + Slides"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-29T00:14:48.712Z",
+      "details": {
+        "hours": 0.4,
+        "description": "ELEC 315 Assignment 1"
+      }
+    },
+    {
+      "action": "bank_hours",
+      "timestamp": "2026-01-29T02:36:40.554Z",
+      "details": {
+        "hours": 0.5700000000000001,
+        "description": "Banked all available hours"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-29T02:55:10.633Z",
+      "details": {
+        "hours": 0.46,
+        "description": "ELEC 315 Assignment 1"
+      }
+    }
+  ],
+  "totalHoursLogged": 1.62,
+  "totalHoursBanked": 1.1600000000000001,
   "totalHoursRedeemed": 0,
-  "unbankedHours": 0,
-  "lastActive": "2026-01-27T21:58:19.190Z"
+  "unbankedHours": 0.46,
+  "lastActive": "2026-01-29T02:55:10.633Z"
 }

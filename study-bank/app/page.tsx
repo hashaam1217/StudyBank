@@ -8,31 +8,56 @@ import { Divider } from "@heroui/divider";
 import { Chip } from "@heroui/chip";
 import { Progress } from "@heroui/progress";
 import { title } from "@/components/primitives";
-import type { Worklog, WorklogEntry } from "@/lib/worklog";
+import type { Worklog, WorklogEntry } from "@/lib/types";
+import { REDEMPTION_MULTIPLIER } from "@/lib/types";
 
 export default function Home() {
   const [worklog, setWorklog] = useState<Worklog | null>(null);
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Timer states
-  const [seconds, setSeconds] = useState(0);
+  // Timer states - using timestamps instead of seconds counter
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [pausedTime, setPausedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Redeem modal states
   const [redeemHours, setRedeemHours] = useState("");
   const [redeemDescription, setRedeemDescription] = useState("");
 
+  // Load timer state from localStorage on mount
   useEffect(() => {
+    const savedTimerState = localStorage.getItem("timerState");
+    if (savedTimerState) {
+      try {
+        const { startTime: savedStartTime, pausedTime: savedPausedTime, isRunning: savedIsRunning, description: savedDescription } = JSON.parse(savedTimerState);
+        if (savedStartTime) setStartTime(savedStartTime);
+        if (savedPausedTime) setPausedTime(savedPausedTime);
+        if (savedIsRunning) setIsRunning(savedIsRunning);
+        if (savedDescription) setDescription(savedDescription);
+      } catch (e) {
+        console.error("Failed to load timer state:", e);
+      }
+    }
     fetchWorklog();
   }, []);
 
+  // Save timer state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(
+      "timerState",
+      JSON.stringify({ startTime, pausedTime, isRunning, description })
+    );
+  }, [startTime, pausedTime, isRunning, description]);
+
+  // Update current time every 100ms when running
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
-        setSeconds((prev) => prev + 1);
-      }, 1000);
+        setCurrentTime(Date.now());
+      }, 100);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -56,6 +81,15 @@ export default function Home() {
     }
   };
 
+  // Calculate elapsed seconds based on timestamps
+  const getElapsedSeconds = () => {
+    if (!startTime) return pausedTime;
+    if (!isRunning) return pausedTime;
+    return pausedTime + Math.floor((currentTime - startTime) / 1000);
+  };
+
+  const seconds = getElapsedSeconds();
+
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -64,7 +98,16 @@ export default function Home() {
   };
 
   const handleStartPause = () => {
-    setIsRunning(!isRunning);
+    if (isRunning) {
+      // Pausing - save the elapsed time
+      setPausedTime(getElapsedSeconds());
+      setStartTime(null);
+      setIsRunning(false);
+    } else {
+      // Starting/Resuming - set new start time
+      setStartTime(Date.now());
+      setIsRunning(true);
+    }
   };
 
   const handleEnd = async () => {
@@ -92,9 +135,12 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setWorklog(data);
-        setSeconds(0);
+        // Reset timer
+        setStartTime(null);
+        setPausedTime(0);
         setIsRunning(false);
         setDescription("");
+        localStorage.removeItem("timerState");
       } else {
         alert("Failed to log hours");
       }
@@ -107,8 +153,10 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    setSeconds(0);
+    setStartTime(null);
+    setPausedTime(0);
     setIsRunning(false);
+    localStorage.removeItem("timerState");
   };
 
   const handleBankAll = async () => {
@@ -149,11 +197,12 @@ export default function Home() {
       return;
     }
 
-    const hours = parseFloat(redeemHours);
+    const hoursToSpend = parseFloat(redeemHours); // Hours to spend from balance
     const availableHours = worklog ? worklog.totalHoursBanked - worklog.totalHoursRedeemed : 0;
+    const hoursYouGet = hoursToSpend * REDEMPTION_MULTIPLIER; // Hours you actually get
 
-    if (hours > availableHours) {
-      alert(`You only have ${availableHours.toFixed(2)} hours available`);
+    if (hoursToSpend > availableHours) {
+      alert(`You only have ${availableHours.toFixed(2)} banked hours available.`);
       return;
     }
 
@@ -166,8 +215,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           action: "redeem_hours",
-          hours: hours,
-          description: redeemDescription || "Redeemed hours",
+          hours: hoursToSpend, // Store the hours spent from balance
+          description: redeemDescription || `Redeemed ${hoursYouGet.toFixed(2)}h (spent: ${hoursToSpend}h)`,
         }),
       });
 
@@ -230,6 +279,22 @@ export default function Home() {
     .filter(a => a.action === 'log_hours')
     .reduce((sum, a, _, arr) => sum + a.details.hours / arr.length, 0) || 0;
 
+  // Calculate daily average
+  const dailyAverage = (() => {
+    if (!worklog || worklog.activities.length === 0) return 0;
+    
+    const loggedActivities = worklog.activities.filter(a => a.action === 'log_hours');
+    if (loggedActivities.length === 0) return 0;
+    
+    const timestamps = loggedActivities.map(a => new Date(a.timestamp).getTime());
+    const earliestDate = new Date(Math.min(...timestamps));
+    const now = new Date();
+    
+    const daysSinceStart = Math.max(1, Math.ceil((now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    return worklog.totalHoursLogged / daysSinceStart;
+  })();
+
   return (
     <section className="flex flex-col items-center justify-center gap-6 py-8 md:py-10 px-4">
       <div className="w-full max-w-6xl">
@@ -286,7 +351,13 @@ export default function Home() {
 
         {/* Additional Stats */}
         {worklog && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardBody>
+                <p className="text-sm text-default-500 mb-2">Daily Average</p>
+                <p className="text-xl font-semibold">{dailyAverage.toFixed(2)}h/day</p>
+              </CardBody>
+            </Card>
             <Card>
               <CardBody>
                 <p className="text-sm text-default-500 mb-2">This Week</p>
@@ -336,7 +407,14 @@ export default function Home() {
           {/* Timer Card */}
           <Card>
             <CardHeader>
-              <h3 className="text-xl font-semibold">Timer</h3>
+              <div className="flex justify-between items-center w-full">
+                <h3 className="text-xl font-semibold">Timer</h3>
+                {isRunning && (
+                  <Chip color="success" variant="dot" size="sm">
+                    Running
+                  </Chip>
+                )}
+              </div>
             </CardHeader>
             <Divider />
             <CardBody className="gap-4">
@@ -424,20 +502,30 @@ export default function Home() {
               {/* Redeem Section */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <p className="text-sm font-medium">Available to Redeem</p>
+                  <p className="text-sm font-medium">Available Balance</p>
                   <Chip color="primary" variant="flat">
                     {availableHours.toFixed(2)}h
                   </Chip>
                 </div>
+                <div className="bg-default-100 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-default-600 mb-1">
+                    Redemption Rate: {REDEMPTION_MULTIPLIER}x
+                  </p>
+                  <p className="text-xs text-default-500">
+                    For every 10 banked hours you spend, you get {(10 * REDEMPTION_MULTIPLIER).toFixed(1)} redeemed hours
+                  </p>
+                </div>
                 <Input
                   type="number"
-                  label="Hours to Redeem"
+                  label="Banked Hours to Spend"
                   placeholder="0.00"
                   value={redeemHours}
                   onChange={(e) => setRedeemHours(e.target.value)}
                   step="0.5"
                   min="0"
+                  max={availableHours}
                   className="mb-3"
+                  description={redeemHours ? `You'll get: ${(parseFloat(redeemHours) * REDEMPTION_MULTIPLIER).toFixed(2)} redeemed hours` : ""}
                 />
                 <Input
                   label="Reason (optional)"
