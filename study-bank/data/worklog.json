@@ -48,11 +48,27 @@
         "hours": 0.46,
         "description": "ELEC 315 Assignment 1"
       }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-29T07:35:13.442Z",
+      "details": {
+        "hours": 1.41,
+        "description": "ELEC 315 Assignment 1"
+      }
+    },
+    {
+      "action": "bank_hours",
+      "timestamp": "2026-01-29T07:35:37.952Z",
+      "details": {
+        "hours": 1.8699999999999999,
+        "description": "Banked all available hours"
+      }
     }
   ],
-  "totalHoursLogged": 1.62,
-  "totalHoursBanked": 1.1600000000000001,
+  "totalHoursLogged": 3.0300000000000002,
+  "totalHoursBanked": 3.0300000000000002,
   "totalHoursRedeemed": 0,
-  "unbankedHours": 0.46,
-  "lastActive": "2026-01-29T02:55:10.633Z"
+  "unbankedHours": 0,
+  "lastActive": "2026-01-29T07:35:37.952Z"
 }
