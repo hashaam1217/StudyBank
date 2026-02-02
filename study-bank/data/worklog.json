@@ -64,11 +64,59 @@
         "hours": 1.8699999999999999,
         "description": "Banked all available hours"
       }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-30T03:28:34.063Z",
+      "details": {
+        "hours": 1.23,
+        "description": "ELEC 342 Assignment 1"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-01-30T05:05:45.029Z",
+      "details": {
+        "hours": 0.77,
+        "description": "ELEC 342 Assignment 1"
+      }
+    },
+    {
+      "action": "bank_hours",
+      "timestamp": "2026-01-31T23:50:53.847Z",
+      "details": {
+        "hours": 2,
+        "description": "Banked all available hours"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-02-01T01:22:19.991Z",
+      "details": {
+        "hours": 1.31,
+        "description": "APSC 450 Lectures"
+      }
+    },
+    {
+      "action": "log_hours",
+      "timestamp": "2026-02-01T07:00:00.669Z",
+      "details": {
+        "hours": 3.34,
+        "description": "ELEC 301 Mini Project 1 + Prep "
+      }
+    },
+    {
+      "action": "bank_hours",
+      "timestamp": "2026-02-01T07:00:23.409Z",
+      "details": {
+        "hours": 4.65,
+        "description": "Banked all available hours"
+      }
     }
   ],
-  "totalHoursLogged": 3.0300000000000002,
-  "totalHoursBanked": 3.0300000000000002,
+  "totalHoursLogged": 9.68,
+  "totalHoursBanked": 9.68,
   "totalHoursRedeemed": 0,
   "unbankedHours": 0,
-  "lastActive": "2026-01-29T07:35:37.952Z"
+  "lastActive": "2026-02-01T07:00:23.409Z"
 }
